@@ -1,0 +1,158 @@
+# .github/workflows/main.yml
+# This workflow runs checks for the Color Module Bash scripts.
+
+name: CI/CD - Color Module Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual triggering from GitHub UI
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Dependencies (jq, shellcheck)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq shellcheck # shellcheck for linting Bash scripts
+
+    - name: Make scripts executable
+      run: |
+        chmod +x install.sh
+        chmod +x install_aliases.sh
+        chmod +x uninstall.sh
+        # Also make the template install_hook executable, as the installer copies it
+        chmod +x ctl_environment_template/install_hook.sh.template
+
+    - name: Lint install.sh with ShellCheck
+      run: shellcheck install.sh
+
+    - name: Lint install_aliases.sh with ShellCheck
+      run: shellcheck install_aliases.sh
+
+    - name: Lint uninstall.sh with ShellCheck
+      run: shellcheck uninstall.sh
+
+    - name: Lint install_hook.sh.template with ShellCheck
+      run: shellcheck ctl_environment_template/install_hook.sh.template
+
+    - name: Dry Run: Install Core Module (Force Overwrite to Ensure Clean State)
+      run: |
+        echo "--- Running install.sh with --force for dry run ---"
+        # Simulate installation in a temporary directory
+        # Using a subshell to contain directory changes and sourced environment
+        (
+          export HOME=$(mktemp -d) # Create a temporary HOME directory
+          echo "Temporary HOME is: $HOME"
+          ./install.sh --force # Run the installer
+          
+          # Verify install_hook.sh is present and executable in temp HOME
+          if [ -f "$HOME/ctl_environment/install_hook.sh" ]; then
+            echo "install_hook.sh found in temporary HOME. Making executable..."
+            chmod +x "$HOME/ctl_environment/install_hook.sh"
+          else
+            echo "install_hook.sh NOT found in temporary HOME. Installation failed."
+            exit 1
+          fi
+
+          echo "--- Sourcing colors.source.sh in temporary HOME ---"
+          # Source the generated color script to make functions available
+          source "$HOME/ctl_environment/colors.source.sh"
+          
+          echo "--- Testing color_apply function ---"
+          if command -v color_apply &> /dev/null; then
+            color_apply success "Core module install dry run successful!"
+            color_apply typescript "TypeScript test color."
+          else
+            echo "Error: color_apply function not found after sourcing colors.source.sh."
+            exit 1
+          fi
+        )
+      env:
+        # Pass a dummy USER for mktemp -d if needed, though usually not
+        USER: github-actions
+
+    - name: Dry Run: Install Aliases
+      run: |
+        echo "--- Running install_aliases.sh for dry run ---"
+        (
+          export HOME=$(mktemp -d) # Use another temporary HOME
+          echo "Temporary HOME for aliases is: $HOME"
+          # Ensure color module is also "installed" conceptually for colortest dependency
+          mkdir -p "$HOME/ctl_environment"
+          cp ctl_environment_template/colors.source.sh.template "$HOME/ctl_environment/colors.source.sh"
+          cp ctl_environment_template/color_roles.json.template "$HOME/ctl_environment/color_roles.json"
+          chmod +x "$HOME/ctl_environment/colors.source.sh"
+          
+          ./install_aliases.sh --force
+          
+          echo "--- Sourcing .bashrc in temporary HOME for aliases ---"
+          source "$HOME/.bashrc"
+          
+          echo "--- Testing aliases ---"
+          if command -v colortest &> /dev/null; then
+            colortest
+            echo "colortest alias is working."
+          else
+            echo "Error: colortest alias not found."
+            exit 1
+          fi
+
+          if command -v dps &> /dev/null; then
+            echo "dps alias is working (checking for existence)."
+          else
+            echo "Error: dps alias not found."
+            exit 1
+          fi
+        )
+      env:
+        USER: github-actions
+
+    - name: Dry Run: Uninstall Process
+      run: |
+        echo "--- Running uninstall.sh dry run ---"
+        # Simulate installation first, then uninstall
+        (
+          export HOME=$(mktemp -d)
+          echo "Temporary HOME for uninstall is: $HOME"
+          ./install.sh --force
+          ./install_aliases.sh --force
+          chmod +x "$HOME/ctl_environment/install_hook.sh" # Ensure executable
+          
+          echo "--- Running uninstall.sh ---"
+          # Use 'yes' to auto-confirm the uninstallation prompt
+          yes | ./uninstall.sh
+          
+          echo "--- Verifying uninstallation cleanup ---"
+          if [ -d "$HOME/ctl_environment" ]; then
+            if [ "$(ls -A "$HOME/ctl_environment")" ]; then
+              echo "Warning: ctl_environment directory is not empty after uninstall."
+              ls -al "$HOME/ctl_environment"
+            else
+              echo "ctl_environment directory is empty as expected."
+            fi
+          else
+            echo "ctl_environment directory removed as expected."
+          fi
+          
+          # Check if .bashrc lines are removed (this requires a separate check outside the shell that sourced it)
+          # For a more robust test here, one would inspect the temporary .bashrc file content.
+          if ! grep -q "source.*ctl_environment/colors.source.sh" "$HOME/.bashrc" && \
+             ! grep -q "source.*bash_aliases" "$HOME/.bashrc"; then
+            echo ".bashrc entries removed successfully."
+          else
+            echo "Warning: .bashrc entries might not be fully removed."
+            cat "$HOME/.bashrc"
+          fi
+        )
+      env:
+        USER: github-actions
