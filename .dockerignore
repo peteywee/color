@@ -1,0 +1,9 @@
+# Folders to ignore
+.git
+.gitignore
+.idea/
+__pycache__/
+*.pyc
+*.log
+
+# Do NOT ignore 'docs' or 'template' as they are needed for the container build.

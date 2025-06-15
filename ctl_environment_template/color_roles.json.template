@@ -1,0 +1,112 @@
+[
+    {
+        "role": "directory",
+        "category": "infrastructure",
+        "color_code": "COLOR_PURPLE",
+        "hex_value": "#A020F0",
+        "hierarchy": "parent",
+        "source_type": "static",
+        "app_linked": "filesystem",
+        "install_hook": "hook_directory_installed"
+    },
+    {
+        "role": "prompt",
+        "category": "interface",
+        "color_code": "COLOR_PURPLE",
+        "hex_value": "#A020F0",
+        "hierarchy": "parent",
+        "source_type": "static",
+        "app_linked": "bash",
+        "install_hook": "hook_prompt_installed"
+    },
+    {
+        "role": "files",
+        "category": "storage",
+        "color_code": "COLOR_VIBRANT_BLUE",
+        "hex_value": "#1E90FF",
+        "hierarchy": "child",
+        "source_type": "static",
+        "app_linked": "filesystem",
+        "install_hook": "hook_files_installed"
+    },
+    {
+        "role": "links",
+        "category": "storage",
+        "color_code": "COLOR_CYAN",
+        "hex_value": "#00CED1",
+        "hierarchy": "child",
+        "source_type": "static",
+        "app_linked": "filesystem",
+        "install_hook": "hook_links_installed"
+    },
+    {
+        "role": "scripts",
+        "category": "automation",
+        "color_code": "COLOR_SCRIPT_BLUE",
+        "hex_value": "#4169E1",
+        "hierarchy": "cousin",
+        "source_type": "static",
+        "app_linked": "bash",
+        "install_hook": "hook_scripts_installed"
+    },
+    {
+        "role": "errors",
+        "category": "alert",
+        "color_code": "COLOR_RED",
+        "hex_value": "#FF0000",
+        "hierarchy": "alert",
+        "source_type": "static",
+        "app_linked": "system",
+        "install_hook": "hook_errors_installed"
+    },
+    {
+        "role": "warnings",
+        "category": "alert",
+        "color_code": "COLOR_YELLOW",
+        "hex_value": "#FFFF00",
+        "hierarchy": "alert",
+        "source_type": "static",
+        "app_linked": "system",
+        "install_hook": "hook_warnings_installed"
+    },
+    {
+        "role": "success",
+        "category": "feedback",
+        "color_code": "COLOR_GREEN",
+        "hex_value": "#00FF00",
+        "hierarchy": "feedback",
+        "source_type": "static",
+        "app_linked": "system",
+        "install_hook": "hook_success_installed"
+    },
+    {
+        "role": "typescript",
+        "category": "development",
+        "color_code": "COLOR_TS_BLUE",
+        "hex_value": "#007ACC",
+        "hierarchy": "language",
+        "source_type": "static",
+        "app_linked": "frontend",
+        "install_hook": "hook_typescript_installed"
+    },
+    {
+        "role": "javascript",
+        "category": "development",
+        "color_code": "COLOR_JS_YELLOW",
+        "hex_value": "#F7DF1E",
+        "hierarchy": "language",
+        "source_type": "static",
+        "app_linked": "frontend",
+        "install_hook": "hook_javascript_installed"
+    },
+    {
+        "role": "nodejs",
+        "category": "runtime",
+        "color_code": "COLOR_NODE_GREEN",
+        "hex_value": "#68A063",
+        "hierarchy": "runtime",
+        "source_type": "static",
+        "app_linked": "backend",
+        "install_hook": "hook_nodejs_installed"
+    }
+]

@@ -1,0 +1,67 @@
+#!/bin/bash
+# colors.source.sh - Runtime loader for color role schema
+
+COLOR_ROLE_SCHEMA_PATH="${COLOR_ROLE_SCHEMA_PATH:-$HOME/.color_roles.json}"
+
+if [ ! -f "$COLOR_ROLE_SCHEMA_PATH" ]; then
+  echo "[ERROR] color_roles.json not found at $COLOR_ROLE_SCHEMA_PATH"
+  return 1
+fi
+
+if ! command -v jq &> /dev/null; then
+  echo "[ERROR] jq is required but not installed."
+  return 1
+fi
+
+# Load roles into environment
+export COLOR_ROLE_MAP=$(cat "$COLOR_ROLE_SCHEMA_PATH" | jq -c '.')
+
+# Function to get color hex by role
+get_color_by_role() {
+  local role="$1"
+  echo "$COLOR_ROLE_MAP" | jq -r ".[] | select(.role==\"$role\") | .hex_value"
+}
+
+# Enhanced hex to ANSI 24-bit color conversion
+hex_to_ansi() {
+    local hex="$1"
+    # Remove # if present
+    hex="${hex#\#}"
+    
+    # Convert hex to RGB
+    local r=$((16#${hex:0:2}))
+    local g=$((16#${hex:2:2}))
+    local b=$((16#${hex:4:2}))
+    
+    # Return 24-bit color escape sequence (Foreground)
+    echo "\033[38;2;${r};${g};${b}m"
+}
+
+# Function to apply color to text
+color_apply() {
+  local role="$1"
+  shift
+  local text="$*"
+  local color_hex=$(get_color_by_role "$role")
+  
+  if [ "$color_hex" != "null" ] && [ -n "$color_hex" ]; then
+    local ansi_color=$(hex_to_ansi "$color_hex")
+    echo -e "${ansi_color}${text}\033[0m" # Apply color and reset
+  else
+    echo "$text" # Return text uncolored if role not found
+  fi
+}
+
+# Export functions for use in shell
+export -f get_color_by_role
+export -f color_apply
+export -f hex_to_ansi # Export the new helper function
+
+# Set colored prompt using the new color_apply function
+PROMPT_COLOR_HEX=$(get_color_by_role prompt)
+if [ "$PROMPT_COLOR_HEX" != "null" ] && [ -n "$PROMPT_COLOR_HEX" ]; then
+    # Use direct ANSI escape for PS1, as color_apply outputs the text with color
+    # and we just need the escape sequence for the prompt.
+    PROMPT_ANSI_COLOR=$(hex_to_ansi "$PROMPT_COLOR_HEX")
+    export PS1="\[${PROMPT_ANSI_COLOR}\]\u@\h:\w\$ \[\e[0m\]"
+fi

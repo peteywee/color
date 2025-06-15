@@ -1,0 +1,36 @@
+# Ignore generated files and backups that live outside the repo
+/ctl_environment/
+.color_roles.json
+.bash_aliases
+.bashrc # Do not track .bashrc in git, only modify it
+
+# Backup files
+*.backup.*
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+.pnpm-store/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+*.log
+.mypy_cache/
+.pytest_cache/
+
+# Docker
+*.env
+.env
+

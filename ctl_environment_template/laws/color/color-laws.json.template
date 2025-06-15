@@ -1,0 +1,39 @@
+{
+  "RULE-COLOR-SYSTEM-01": {
+    "description": "Enforce color validity for system roles by prohibiting pure black and white.",
+    "pure_white": "#FFFFFF",
+    "pure_black": "#000000",
+    "enforced": true,
+    "rules": {
+      "no_pure_white": true,
+      "no_pure_black": true,
+      "hierarchy_protection": true
+    },
+    "roles": {
+      "directory": "#A020F0",
+      "files": "#1E90FF",
+      "scripts": "#4169E1",
+      "links": "#00CED1",
+      "prompt": "#A020F0",
+      "errors": "#FF0000",
+      "warnings": "#FFFF00",
+      "success": "#00FF00",
+      "typescript": "#007ACC",
+      "javascript": "#F7DF1E",
+      "nodejs": "#68A063"
+    },
+    "hierarchy": {
+      "directory": "parent",
+      "files": "child",
+      "scripts": "cousin",
+      "links": "child",
+      "prompt": "parent",
+      "errors": "alert",
+      "warnings": "alert",
+      "success": "feedback",
+      "typescript": "language",
+      "javascript": "language",
+      "nodejs": "runtime"
+    }
+  }
+}

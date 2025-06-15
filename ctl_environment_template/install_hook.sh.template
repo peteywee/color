@@ -1,0 +1,40 @@
+#!/bin/bash
+# install_hook.sh - Auto-register a new app into color_roles.json
+
+ROLE_NAME="$1"
+CATEGORY="$2"
+HIERARCHY="$3"
+
+if [[ -z "$ROLE_NAME" || -z "$CATEGORY" || -z "$HIERARCHY" ]]; then
+  echo "Usage: $0 <role_name> <category> <hierarchy>"
+  echo "Example: $0 nginx infrastructure parent"
+  exit 1
+fi
+
+SCHEMA_PATH="${COLOR_ROLE_SCHEMA_PATH:-$HOME/.color_roles.json}"
+
+if [ ! -f "$SCHEMA_PATH" ]; then
+  echo "ERROR: color_roles.json not found at $SCHEMA_PATH"
+  exit 1
+fi
+
+# Check if role already exists
+if jq -e ".[] | select(.role==\"$ROLE_NAME\")" "$SCHEMA_PATH" > /dev/null; then
+  echo "Role '$ROLE_NAME' already exists. Use a different name or remove the existing role first."
+  exit 1
+fi
+
+# Generate a safe color (avoiding pure white/black)
+while true; do
+  HEX_COLOR=$(printf "#%06x" $((RANDOM*RANDOM % 0xDDDDDD + 0x111111))) # Ensures color is not too dark or too bright
+  if [[ "$HEX_COLOR" != "#FFFFFF" && "$HEX_COLOR" != "#000000" ]]; then
+    break
+  fi
+done
+
+COLOR_CODE="COLOR_$(echo "$ROLE_NAME" | tr '[:lower:]' '[:upper:]' | tr -d '.-')_$(od -vAn -N2 -tu4 < /dev/urandom | tr -d ' ')"
+
+# Add new role to schema
+jq ". + [{\"role\": \"$ROLE_NAME\", \"category\": \"$CATEGORY\", \"color_code\": \"$COLOR_CODE\", \"hex_value\": \"$HEX_COLOR\", \"hierarchy\": \"$HIERARCHY\", \"source_type\": \"dynamic\", \"app_linked\": \"$ROLE_NAME\", \"install_hook\": \"hook_${ROLE_NAME}_installed\"}]" "$SCHEMA_PATH" > "${SCHEMA_PATH}.tmp" && mv "${SCHEMA_PATH}.tmp" "$SCHEMA_PATH"
+
+echo "✅ Role '$ROLE_NAME' registered successfully with color $HEX_COLOR"
