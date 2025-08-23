@@ -1,13 +1,13 @@
 #!/bin/bash
 # ========================================
 # install.sh
-# Unified Color Module & Aliases Installer (+ nano TS syntax)
+# Unified Color Module & Aliases Installer (+ nano TS/TSX syntax)
 # ========================================
 
 set -euo pipefail
 
 # ---------- VERSION ----------
-CORE_VERSION="2.0.4"
+CORE_VERSION="2.0.5"   # bump for TSX support
 ALIASES_VERSION="2.0.4"
 CORE_VERSION_FILE="$HOME/ctl_environment/.version"
 ALIASES_VERSION_FILE="$HOME/ctl_environment/.aliases_version"
@@ -27,6 +27,7 @@ SYMLINK="$HOME/.color_roles.json"
 NANO_DIR="$HOME/.nano"
 NANORC="$HOME/.nanorc"
 TS_NANORC_TARGET="$NANO_DIR/typescript.nanorc"
+TSX_NANORC_TARGET="$NANO_DIR/tsx.nanorc"
 
 # Source paths for template files in the repository
 REPO_ROOT="$(dirname "$(readlink -f "$0")")"
@@ -36,6 +37,7 @@ COLORS_SOURCE_TEMPLATE="$REPO_ROOT/ctl_environment_template/colors.source.sh.tem
 INSTALL_HOOK_TEMPLATE="$REPO_ROOT/ctl_environment_template/install_hook.sh.template"
 BASH_ALIASES_TEMPLATE="$REPO_ROOT/bash_aliases_template.sh"
 TS_NANORC_TEMPLATE="$REPO_ROOT/ctl_environment_template/nano/typescript.nanorc.template"
+TSX_NANORC_TEMPLATE="$REPO_ROOT/ctl_environment_template/nano/tsx.nanorc.template"
 
 # ---------- GLOBAL FLAGS ----------
 FORCE_OVERWRITE=false
@@ -183,37 +185,51 @@ install_aliases() {
 }
 
 install_nano_typescript_syntax() {
-    $SKIP_NANO && { info "--- Skipping nano TypeScript syntax install ---"; return; }
-    info "--- Installing nano TypeScript syntax ---"
+    $SKIP_NANO && { info "--- Skipping nano TypeScript/TSX syntax install ---"; return; }
+    info "--- Installing nano TypeScript/TSX syntax ---"
 
     mkdir -p "$NANO_DIR"
-    copy_template_file "$TS_NANORC_TEMPLATE" "$TS_NANORC_TARGET"
 
-    # Ensure ~/.nanorc includes the file
-    ensure_line_in_file "$NANORC" 'include "~/.nano/typescript.nanorc"' 'include "~/.nano/typescript.nanorc"'
+    # TypeScript nanorc (if present in templates)
+    if [ -f "$TS_NANORC_TEMPLATE" ]; then
+        copy_template_file "$TS_NANORC_TEMPLATE" "$TS_NANORC_TARGET"
+        ensure_line_in_file "$NANORC" 'include "~/.nano/typescript.nanorc"' 'include "~/.nano/typescript.nanorc"'
+    else
+        warn "TypeScript nanorc template not found: $TS_NANORC_TEMPLATE"
+    fi
 
-    # Ship a demo file for quick testing (in /tmp, not persisted)
+    # TSX nanorc
+    copy_template_file "$TSX_NANORC_TEMPLATE" "$TSX_NANORC_TARGET"
+    ensure_line_in_file "$NANORC" 'include "~/.nano/tsx.nanorc"' 'include "~/.nano/tsx.nanorc"'
+
+    # Ship demo files to /tmp
     cat > /tmp/example.ts <<'TS'
 /** Nano TypeScript highlighting demo */
-import { readFileSync } from "fs";
-
-enum Role { Admin="admin", User="user" }
-type Id = string;
-const HEX = 0xFF_AA, BIN = 0b1010_0101;
-const greet = (name: string) => `Hi, ${name}!`;
-
-@((ctor: any)=>ctor)
-class Service {
-  constructor(private readonly apiKey: string) {}
-  async run(id: Id): Promise<boolean> {
-    if (!id) throw new Error("id required");
-    const ok = true && !false;
-    return ok && this.apiKey.length > 0;
-  }
-}
+export const answer: number = 42;
 TS
+    cat > /tmp/example.tsx <<'TSX'
+/** Nano TSX highlighting demo */
+import React from "react";
 
-    success "nano TypeScript syntax installed. Test with: nano -Y TypeScript /tmp/example.ts"
+type Props = { name: string; ok?: boolean };
+
+export default function Hello(props: Props) {
+  const { name, ok = true } = props;
+  return (
+    <div className="wrap" data-role="header">
+      {/* JSX comment */}
+      <h1>Hello, {name}!</h1>
+      <button disabled={!ok} onClick={() => console.log(`Hi, ${name}`)}>
+        Click
+      </button>
+    </div>
+  );
+}
+TSX
+
+    success "nano syntax installed. Test with:"
+    echo "  nano -Y TypeScript /tmp/example.ts"
+    echo "  nano -Y TSX        /tmp/example.tsx"
 }
 
 verify_installation() {
@@ -244,11 +260,14 @@ verify_installation() {
     fi
 
     if ! $SKIP_NANO; then
-        if [ ! -f "$TS_NANORC_TARGET" ]; then
+        if [ ! -f "$TSX_NANORC_TARGET" ]; then
+            error "Missing nano TSX syntax file: $TSX_NANORC_TARGET"; ((errors++))
+        fi
+        if [ -f "$TS_NANORC_TEMPLATE" ] && [ ! -f "$TS_NANORC_TARGET" ]; then
             error "Missing nano TS syntax file: $TS_NANORC_TARGET"; ((errors++))
         fi
-        if ! grep -Fq 'include "~/.nano/typescript.nanorc"' "$NANORC" 2>/dev/null; then
-            error "Missing include in ~/.nanorc for TypeScript syntax"; ((errors++))
+        if ! grep -Fq 'include "~/.nano/tsx.nanorc"' "$NANORC" 2>/dev/null; then
+            error "Missing include in ~/.nanorc for TSX syntax"; ((errors++))
         fi
     fi
 
@@ -267,8 +286,12 @@ show_next_steps() {
     echo ""
     info "Next steps:"
     echo "  1. Reload your shell: source ~/.bashrc"
-    echo "  2. Test nano highlighting: nano -Y TypeScript /tmp/example.ts"
-    echo "  3. Customize colors in: $TS_NANORC_TARGET"
+    echo "  2. Test TS/TSX highlighting:"
+    echo "     nano -Y TypeScript /tmp/example.ts"
+    echo "     nano -Y TSX        /tmp/example.tsx"
+    echo "  3. Customize colors in:"
+    echo "     $TS_NANORC_TARGET"
+    echo "     $TSX_NANORC_TARGET"
     echo ""
 }
 
@@ -279,7 +302,7 @@ Options:
   -f, --force         Force overwrite of existing configuration files.
   -b, --backup        Create backups before overwriting (requires --force).
       --skip-aliases  Skip installation of bash aliases.
-      --skip-nano     Skip installation of nano TypeScript syntax.
+      --skip-nano     Skip installation of nano TypeScript/TSX syntax.
   -h, --help          Show this help message.
   -v, --version       Show version information.
 USAGE

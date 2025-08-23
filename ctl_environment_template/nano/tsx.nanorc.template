@@ -1,0 +1,58 @@
+## ===== TSX (TypeScript + JSX) =====
+syntax "TSX" "\.tsx$"
+
+comment "// "
+
+# --- Comments ---
+color brightblack "//.*$"
+color brightblack start="/\*" end="\*/"
+# JSX block comment: {/* ... */}
+color brightblack start="\{/\*" end="\*/\}"
+
+# --- Strings & template interpolation ---
+color green start="\"" end="\""
+color green start="'"  end="'"
+color green start="`"  end="`"
+color brightyellow "\$\{[^}]*\}"
+
+# --- Numbers ---
+color brightyellow "(0x[0-9A-Fa-f_]+|0b[01_]+|0o[0-7_]+|[0-9][0-9_]*(\.[0-9][0-9_]*)?([eE][+-]?[0-9][0-9_]*)?)"
+
+# --- Decorators ---
+color brightmagenta "@[A-Za-z_][A-Za-z0-9_]*"
+
+# --- JSX tags & attributes ---
+# Opening/closing tags
+color brightblue  "<\/?[A-Za-z_][A-Za-z0-9\.\-]*"
+# Tag end '>' '/>' (kept subtle; optional)
+color brightblue  "\/>|>"
+# Attributes (name=)
+color cyan        "[[:space:]][A-Za-z_:][A-Za-z0-9:._-]*="
+# JSX entities
+color brightcyan  "&[A-Za-z#][A-Za-z0-9#]*;"
+# JSX expression braces { ... } and spreads {...props}
+color brightyellow "\{[^}]*\}"
+
+# --- Core TS/JS keywords ---
+icolor brightcyan "\<(break|case|catch|continue|default|do|else|finally|for|if|return|switch|throw|try|while|with|yield|await|async|of|in|as|from|new|delete|typeof|instanceof|void)\>"
+
+# --- TS-specific keywords & modifiers ---
+icolor brightmagenta "\<(abstract|declare|enum|implements|interface|keyof|namespace|readonly|require|type|private|protected|public|override|satisfies|infer|asserts|module)\>"
+
+# --- Primitive & special types ---
+icolor magenta "\<(string|number|boolean|bigint|symbol|object|unknown|never|any|void|null|undefined|this|super)\>"
+
+# --- Import/export ---
+icolor brightgreen "\<(import|export|from)\>"
+
+# --- Booleans ---
+icolor brightyellow "\<(true|false)\>"
+
+# --- TODO markers ---
+icolor brightred "(TODO|FIXME|HACK|BUG|NOTE):?"
+
+# --- Operators & punctuation ---
+color brightwhite "(\=>|==?=?|!=?=?|&&|\|\||\+\+?|--?|[%*/]=?|<<|>>>?|<=|>=|\?|\:|=|,|;|\.)"
+
+# --- Braces/brackets/parens ---
+color brightcyan "[{}\[\]()]"
